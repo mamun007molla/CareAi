@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+*.db
+*.sqlite3
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+
+# Secret env
+backend/.env
+
+# Uploads & outputs
+backend/uploads/
+
+# Large model files (download separately)
+backend/app/ai/fall_detection/models/audio/ast_model.torchscript.pt
+backend/app/ai/fall_detection/pose_landmarker.task
+
+# OS
+.DS_Store
+Thumbs.db
