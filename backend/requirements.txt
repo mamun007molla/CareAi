@@ -24,3 +24,7 @@ opencv-python
 pandas
 scikit-learn
 numpy
+
+langchain==0.2.6
+langchain-openai==0.1.14
+langchain-community==0.2.6
