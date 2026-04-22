@@ -14,7 +14,6 @@ import pandas as pd
 import config
 
 
-
 def load_module(mod_name, file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Module file not found: {file_path}")
@@ -26,15 +25,18 @@ def load_module(mod_name, file_path):
 
 def load_xgb(model_path):
     import xgboost as xgb
+
     if model_path.lower().endswith((".json", ".ubj")):
         clf = xgb.XGBClassifier()
         clf.load_model(model_path)
         return clf
     try:
         import joblib
+
         return joblib.load(model_path)
     except:
         import pickle
+
         with open(model_path, "rb") as f:
             return pickle.load(f)
 
@@ -44,18 +46,30 @@ def extract_audio_to_array(video_path, sr=16000):
     tmp_path = tmp.name
     tmp.close()
     cmd = [
-        "ffmpeg", "-y", "-i", video_path,
-        "-vn", "-acodec", "pcm_s16le",
-        "-ar", str(sr), "-ac", "1", tmp_path
+        "ffmpeg",
+        "-y",
+        "-i",
+        video_path,
+        "-vn",
+        "-acodec",
+        "pcm_s16le",
+        "-ar",
+        str(sr),
+        "-ac",
+        "1",
+        tmp_path,
     ]
     subprocess.run(cmd, check=True)
     import librosa
+
     wav, _ = librosa.load(tmp_path, sr=sr, mono=True)
     os.remove(tmp_path)
     return wav
 
 
-def soft_voting_ensemble(audio_probs, vision_probs, audio_weight=0.5, vision_weight=0.5):
+def soft_voting_ensemble(
+    audio_probs, vision_probs, audio_weight=0.5, vision_weight=0.5
+):
     total = audio_weight + vision_weight
     aw = audio_weight / total
     vw = vision_weight / total
@@ -80,11 +94,11 @@ def run_parallel_per_window(
     out_path: str,
     win_s: float = 3.0,
     sr: int = 16000,
-    show: bool = True
+    show: bool = True,
 ):
     # Load helper modules
     per_frame = load_module("per_frame_best", config.PER_FRAME_PATH)
-    fe_eng    = load_module("final_feature_eng_best", config.FE_ENG_PATH)
+    fe_eng = load_module("final_feature_eng_best", config.FE_ENG_PATH)
 
     # Load XGBoost model
     clf = load_xgb(xgb_model_path)
@@ -92,6 +106,7 @@ def run_parallel_per_window(
     # Load AST model & config
     from transformers import ASTFeatureExtractor
     import torch
+
     fe = ASTFeatureExtractor.from_pretrained(ast_prep_config)
     ast_model = torch.jit.load(ast_model_path, map_location="cpu").eval()
     with open(ast_label_map, "r") as f:
@@ -105,16 +120,16 @@ def run_parallel_per_window(
     num_windows = int(np.ceil(total_samples / window_size))
     audio_probs_list = []
     for i in range(num_windows):
-        seg = audio[i*window_size:(i+1)*window_size]
+        seg = audio[i * window_size : (i + 1) * window_size]
         if len(seg) < window_size:
-            seg = np.pad(seg, (0, window_size-len(seg)), "constant")
+            seg = np.pad(seg, (0, window_size - len(seg)), "constant")
         inp = fe(
             seg,
             sampling_rate=sr,
             return_tensors="pt",
             padding="max_length",
             max_length=1024,
-            return_attention_mask=False
+            return_attention_mask=False,
         )["input_values"]
         with torch.no_grad():
             logits = ast_model(inp)
@@ -161,11 +176,18 @@ def run_parallel_per_window(
             # Vision inference task
             def vis_task(frames_local):
                 tmpv = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False).name
-                vw = cv2.VideoWriter(tmpv, fourcc, fps,
-                                     (frames_local[0].shape[1],
-                                      frames_local[0].shape[0]))
+                vw = cv2.VideoWriter(
+                    tmpv,
+                    fourcc,
+                    fps,
+                    (frames_local[0].shape[1], frames_local[0].shape[0]),
+                )
                 for f in frames_local:
-                    v = f if f.dtype == np.uint8 else np.clip(f,0,255).astype(np.uint8)
+                    v = (
+                        f
+                        if f.dtype == np.uint8
+                        else np.clip(f, 0, 255).astype(np.uint8)
+                    )
                     if v.ndim == 2:
                         v = cv2.cvtColor(v, cv2.COLOR_GRAY2BGR)
                     vw.write(v)
@@ -190,9 +212,11 @@ def run_parallel_per_window(
             vision_probs = executor.submit(vis_task, frames.copy()).result()
 
             # Audio probabilities for this segment
-            audio_probs = (audio_probs_list[seg_idx]
-                           if seg_idx < len(audio_probs_list)
-                           else np.array([0.5, 0.5]))
+            audio_probs = (
+                audio_probs_list[seg_idx]
+                if seg_idx < len(audio_probs_list)
+                else np.array([0.5, 0.5])
+            )
 
             # Soft voting ensemble
             ensemble_probs, ensemble_idx, ensemble_conf = soft_voting_ensemble(
@@ -234,19 +258,43 @@ def run_parallel_per_window(
                 pw = max(420, max_w + pad_x * 2)
                 ph = pad_y * 2 + text_h * 3 + line_gap * 2
                 overlay = disp.copy()
-                cv2.rectangle(overlay, (x, y), (x+pw, y+ph), (0,0,0), -1)
+                cv2.rectangle(overlay, (x, y), (x + pw, y + ph), (0, 0, 0), -1)
                 cv2.addWeighted(overlay, 0.7, disp, 0.3, 0, disp)
 
                 # Only show the labels from the center of the window onward
                 # if i >= center_frame:
-                    # Draw each text line with measured spacing
+                # Draw each text line with measured spacing
                 y0 = y + pad_y + text_h
-                cv2.putText(disp, txt_a, (x + pad_x, y0), font, font_scale,
-                            (0,255,0) if "NOT" in txt_a else (0,0,255), thickness, cv2.LINE_AA)
-                cv2.putText(disp, txt_v, (x + pad_x, y0 + text_h + line_gap), font, font_scale,
-                            (0,255,0) if "NOT" in txt_v else (0,0,255), thickness, cv2.LINE_AA)
-                cv2.putText(disp, txt_e, (x + pad_x, y0 + 2 * (text_h + line_gap)), font, font_scale,
-                            (0,255,0) if "NOT" in txt_e else (0,0,255), thickness, cv2.LINE_AA)
+                cv2.putText(
+                    disp,
+                    txt_a,
+                    (x + pad_x, y0),
+                    font,
+                    font_scale,
+                    (0, 255, 0) if "NOT" in txt_a else (0, 0, 255),
+                    thickness,
+                    cv2.LINE_AA,
+                )
+                cv2.putText(
+                    disp,
+                    txt_v,
+                    (x + pad_x, y0 + text_h + line_gap),
+                    font,
+                    font_scale,
+                    (0, 255, 0) if "NOT" in txt_v else (0, 0, 255),
+                    thickness,
+                    cv2.LINE_AA,
+                )
+                cv2.putText(
+                    disp,
+                    txt_e,
+                    (x + pad_x, y0 + 2 * (text_h + line_gap)),
+                    font,
+                    font_scale,
+                    (0, 255, 0) if "NOT" in txt_e else (0, 0, 255),
+                    thickness,
+                    cv2.LINE_AA,
+                )
 
                 writer.write(disp)
                 # if show:
@@ -258,30 +306,41 @@ def run_parallel_per_window(
                 #     if cv2.waitKey(1) & 0xFF in (27, ord('q')):
                 #         cap.release()
                 #         writer.release()
-                #         cv2.destroyAllWindows()
-                #         return
-                # frame_idx += 1
-
-            center_time = seg_idx*win_s + (win_s/2.0)
-            print(f"[{seg_idx}] center={center_time:.2f}s | {txt_a} | {txt_v} | {txt_e}")
+            center_time = seg_idx * win_s + (win_s / 2.0)
+            print(
+                f"[{seg_idx}] center={center_time:.2f}s | {txt_a} | {txt_v} | {txt_e}"
+            )
 
             seg_idx += 1
 
     finally:
         cap.release()
         writer.release()
-        cv2.destroyAllWindows()
+        try:
+            cv2.destroyAllWindows()
+        except Exception:
+            pass
         executor.shutdown(wait=False)
 
     # Mux audio back
     cmd = [
-        "ffmpeg", "-y",
-        "-i", tmp_out_path,
-        "-i", video_path,
-        "-c:v", "copy",
-        "-map", "0:v:0", "-map", "1:a:0",
-        "-c:a", "aac", "-b:a", "192k",
-        out_path
+        "ffmpeg",
+        "-y",
+        "-i",
+        tmp_out_path,
+        "-i",
+        video_path,
+        "-c:v",
+        "copy",
+        "-map",
+        "0:v:0",
+        "-map",
+        "1:a:0",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        out_path,
     ]
     subprocess.run(cmd, check=True)
     os.remove(tmp_out_path)
@@ -294,11 +353,11 @@ if __name__ == "__main__":
         run_parallel_per_window(*args[:6])
     else:
         # Use defaults from config
-        video    = config.VIDEO_PATH
-        xgbm     = config.XGB_MODEL_PATH
+        video = config.VIDEO_PATH
+        xgbm = config.XGB_MODEL_PATH
         ast_prep = config.AST_PREP_CONFIG
-        ast_mod  = config.AST_MODEL_PATH
-        ast_map  = config.AST_LABEL_MAP
+        ast_mod = config.AST_MODEL_PATH
+        ast_map = config.AST_LABEL_MAP
         # If the input video is known, name the annotated file using its basename
         if video:
             base = os.path.splitext(os.path.basename(video))[0]
@@ -306,7 +365,3 @@ if __name__ == "__main__":
         else:
             outp = os.path.join(os.getcwd(), "annotated_parallel.mp4")
         run_parallel_per_window(video, xgbm, ast_prep, ast_mod, ast_map, outp)
-
-
-
-
