@@ -41,7 +41,7 @@ export default function MedicationVerifyPage() {
       const res = await physicalAPI.verifyMedication(fd);
       setResult(res.data);
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Verification failed. Make sure Ollama is running.");
+      toast.error(err.response?.data?.detail || "Verification failed. Make sure Groq is running.");
     } finally { setLoading(false); }
   };
 
@@ -71,7 +71,7 @@ export default function MedicationVerifyPage() {
       <Card className="border-accent/20 bg-accent/5">
         <CardBody className="py-3">
           <div className="flex items-center gap-4 text-xs text-muted flex-wrap">
-            <span className="flex items-center gap-1.5"><span className="text-accent font-bold">AI Model:</span> gemma3:4b (Ollama local)</span>
+            <span className="flex items-center gap-1.5"><span className="text-accent font-bold">AI Model:</span> gemma3:4b (Groq local)</span>
             <span className="text-surface-border">|</span>
             <span className="flex items-center gap-1.5"><span className="text-accent font-bold">Fallback:</span> GPT-4o (if OPENAI_API_KEY set)</span>
           </div>

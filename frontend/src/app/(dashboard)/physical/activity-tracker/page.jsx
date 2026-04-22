@@ -259,12 +259,12 @@ export default function ActivityTrackerPage() {
               <div className="flex items-center gap-2">
                 <Camera size={15} className="text-accent-cyan" />
                 <h2 className="font-semibold text-text">Posture & Activity Analysis</h2>
-                <Badge variant="cyan">MedGemma AI</Badge>
+                <Badge variant="cyan">Groq Vision AI AI</Badge>
               </div>
             </CardHeader>
             <CardBody className="space-y-4">
               <p className="text-xs text-muted">
-                Upload a photo for posture analysis using MedGemma vision model via Ollama.
+                Upload a photo for posture analysis using Groq Vision AI vision model via Groq.
               </p>
 
               <div
@@ -296,7 +296,7 @@ export default function ActivityTrackerPage() {
               </div>
 
               <Button onClick={handleImgAnalyze} loading={imgLoading} className="w-full" size="lg">
-                {imgLoading ? "MedGemma analyzing…" : <><Sparkles size={15} /> Analyze Posture</>}
+                {imgLoading ? "Groq Vision AI analyzing…" : <><Sparkles size={15} /> Analyze Posture</>}
               </Button>
             </CardBody>
           </Card>
@@ -305,7 +305,7 @@ export default function ActivityTrackerPage() {
             <Card className="border-accent-cyan/20 animate-slide-up">
               <CardHeader>
                 <h2 className="font-semibold text-text flex items-center gap-2">
-                  <Sparkles size={14} className="text-accent-cyan" /> MedGemma Analysis
+                  <Sparkles size={14} className="text-accent-cyan" /> Groq Vision AI Analysis
                 </h2>
               </CardHeader>
               <CardBody>
