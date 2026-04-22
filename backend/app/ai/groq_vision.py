@@ -111,6 +111,67 @@ Respond ONLY with valid JSON:
     }
 
 
+# ── Food Image Analysis ───────────────────────────────────────────────────────
+async def analyze_food_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
+    prompt = """Analyze this food image. Identify food items and estimate nutrition.
+
+Respond ONLY with valid JSON:
+{
+  "food_name": "dish name",
+  "ingredients": ["item1", "item2"],
+  "calories": 350,
+  "protein_g": 20,
+  "carbs_g": 45,
+  "fat_g": 10,
+  "fiber_g": 5,
+  "serving_size": "1 plate (300g)",
+  "meal_type_suggestion": "lunch",
+  "health_notes": "brief note for elderly person"
+}"""
+    raw = await openrouter_image(image_bytes, prompt, mime_type)
+    data = extract_json(raw)
+    if data:
+        return {
+            "food_name": str(data.get("food_name", "Unknown")),
+            "ingredients": list(data.get("ingredients", [])),
+            "calories": int(data.get("calories", 0)),
+            "protein": float(data.get("protein_g", 0)),
+            "carbs": float(data.get("carbs_g", 0)),
+            "fat": float(data.get("fat_g", 0)),
+            "fiber": float(data.get("fiber_g", 0)),
+            "serving_size": str(data.get("serving_size", "1 serving")),
+            "meal_type_suggestion": str(data.get("meal_type_suggestion", "meal")),
+            "health_notes": str(data.get("health_notes", "")),
+            "raw_response": raw,
+        }
+    return {
+        "food_name": "Food detected",
+        "ingredients": [],
+        "calories": 0,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 0,
+        "fiber": 0,
+        "serving_size": "1 serving",
+        "meal_type_suggestion": "meal",
+        "health_notes": raw[:200],
+        "raw_response": raw,
+    }
+
+
+# ── Activity/Posture Analysis ─────────────────────────────────────────────────
+async def analyze_activity_image(
+    image_bytes: bytes, question: str, mime_type: str = "image/jpeg"
+) -> str:
+    prompt = f"""You are monitoring an elderly patient's physical activity.
+Analyze this image carefully.
+
+Question: {question}
+
+Focus on: posture, activity, safety concerns, recommendations."""
+    return await openrouter_image(image_bytes, prompt, mime_type)
+
+
 # ── Medical VQA ───────────────────────────────────────────────────────────────
 async def medical_vqa(
     image_bytes: bytes, question: str, mime_type: str = "image/jpeg"
@@ -145,3 +206,48 @@ Respond ONLY with valid JSON:
         "disclaimer": "Always consult a qualified doctor.",
         "raw_response": raw,
     }
+
+
+# ── Disease Diagnostic ────────────────────────────────────────────────────────
+async def disease_diagnostic(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
+    prompt = """Analyze this medical image and identify possible conditions.
+
+Respond ONLY with valid JSON:
+{
+  "possible_conditions": [
+    {"name": "condition", "probability": 0.75, "description": "brief"}
+  ],
+  "findings": "key findings summary",
+  "recommendations": ["see a doctor"],
+  "urgency": "low",
+  "disclaimer": "AI analysis only. Consult a qualified doctor."
+}"""
+    raw = await openrouter_image(image_bytes, prompt, mime_type)
+    data = extract_json(raw)
+    if data:
+        return {
+            "possible_conditions": list(data.get("possible_conditions", [])),
+            "findings": str(data.get("findings", "")),
+            "recommendations": list(data.get("recommendations", [])),
+            "urgency": str(data.get("urgency", "low")),
+            "disclaimer": str(
+                data.get("disclaimer", "AI analysis only. Consult a qualified doctor.")
+            ),
+            "raw_response": raw,
+        }
+    return {
+        "possible_conditions": [],
+        "findings": raw[:400],
+        "recommendations": [],
+        "urgency": "low",
+        "disclaimer": "AI analysis only. Consult a qualified doctor.",
+        "raw_response": raw,
+    }
+
+
+# ── Extract Text from Image ───────────────────────────────────────────────────
+async def extract_text_from_image(
+    image_bytes: bytes, mime_type: str = "image/jpeg"
+) -> str:
+    prompt = "Extract all text from this medical document image. Return ONLY the extracted text."
+    return await openrouter_image(image_bytes, prompt, mime_type)
