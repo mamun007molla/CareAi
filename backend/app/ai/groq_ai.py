@@ -30,8 +30,3 @@ async def _groq_chat(system: str, user_msg: str, max_tokens: int = 800) -> str:
         temperature=0.1,
     )
     return response.choices[0].message.content or ""
-
-
-
-
-

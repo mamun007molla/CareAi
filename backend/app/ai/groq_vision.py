@@ -111,8 +111,6 @@ Respond ONLY with valid JSON:
     }
 
 
-
-
 # ── Medical VQA ───────────────────────────────────────────────────────────────
 async def medical_vqa(
     image_bytes: bytes, question: str, mime_type: str = "image/jpeg"
@@ -147,5 +145,3 @@ Respond ONLY with valid JSON:
         "disclaimer": "Always consult a qualified doctor.",
         "raw_response": raw,
     }
-
-
