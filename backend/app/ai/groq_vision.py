@@ -71,81 +71,18 @@ async def openrouter_image(
         return data["choices"][0]["message"]["content"] or ""
 
 
-# ── Medication Verification ───────────────────────────────────────────────────
-async def verify_medication(
-    image_bytes: bytes, prescribed: str, mime_type: str = "image/jpeg"
-) -> dict:
-    prompt = f"""You are verifying medication for an elderly patient.
-PRESCRIBED: {prescribed}
 
-Look at this medicine image carefully.
-1. What do you see? (pill colors, shapes, any text/label on packaging)
-2. Does the label say "{prescribed}" or is it a known equivalent?
-
-Respond ONLY with valid JSON:
-{{
-  "matched": true,
-  "confidence": 0.90,
-  "detected": "describe what you see",
-  "warnings": []
-}}"""
-    raw = await openrouter_image(image_bytes, prompt, mime_type)
-    data = extract_json(raw)
-    if data:
-        return {
-            "matched": bool(data.get("matched", False)),
-            "confidence": float(data.get("confidence", 0.5)),
-            "detected_medication": str(data.get("detected", "")),
-            "warnings": list(data.get("warnings", [])),
-            "raw_response": raw,
-        }
-    matched = any(
-        w in raw.lower() for w in ["match", "correct", "verified", "yes", "found"]
-    )
-    return {
-        "matched": matched,
-        "confidence": 0.7 if matched else 0.3,
-        "detected_medication": raw[:300],
-        "warnings": [],
-        "raw_response": raw,
-    }
-
-
-
-
-# ── Medical VQA ───────────────────────────────────────────────────────────────
-async def medical_vqa(
+# ── Activity/Posture Analysis ─────────────────────────────────────────────────
+async def analyze_activity_image(
     image_bytes: bytes, question: str, mime_type: str = "image/jpeg"
-) -> dict:
-    prompt = f"""You are a medical AI helping elderly patients understand medical images.
+) -> str:
+    prompt = f"""You are monitoring an elderly patient's physical activity.
+Analyze this image carefully.
 
 Question: {question}
 
-Respond ONLY with valid JSON:
-{{
-  "answer": "detailed answer",
-  "confidence": 0.85,
-  "related_findings": ["finding1"],
-  "disclaimer": "AI analysis only. Always consult a qualified doctor."
-}}"""
-    raw = await openrouter_image(image_bytes, prompt, mime_type)
-    data = extract_json(raw)
-    if data:
-        return {
-            "answer": str(data.get("answer", raw[:400])),
-            "confidence": float(data.get("confidence", 0.5)),
-            "related_findings": list(data.get("related_findings", [])),
-            "disclaimer": str(
-                data.get("disclaimer", "Always consult a qualified doctor.")
-            ),
-            "raw_response": raw,
-        }
-    return {
-        "answer": raw[:500],
-        "confidence": 0.5,
-        "related_findings": [],
-        "disclaimer": "Always consult a qualified doctor.",
-        "raw_response": raw,
-    }
+Focus on: posture, activity, safety concerns, recommendations."""
+    return await openrouter_image(image_bytes, prompt, mime_type)
+
 
 

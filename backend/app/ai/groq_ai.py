@@ -71,33 +71,3 @@ Be empathetic and supportive in your summary."""
 
 
 # ── Report Summarization ──────────────────────────────────────────────────────
-async def summarize_report(report_text: str) -> ReportSummaryResult:
-    system = "You are a medical assistant. Respond ONLY with valid JSON, no other text."
-    prompt = f"""Summarize this medical report for elderly care:
-
-{{
-  "key_findings": ["finding 1", "finding 2", "finding 3"],
-  "summary": "Simple 2-3 sentence summary that patient can understand",
-  "medications_mentioned": ["med1", "med2"],
-  "follow_up_needed": false
-}}
-
-Report:
-{report_text[:3000]}"""
-
-    try:
-        raw  = clean_json(await _groq_chat(system, prompt))
-        data = json.loads(raw)
-        return ReportSummaryResult(
-            key_findings=data.get("key_findings", []),
-            summary=data.get("summary", ""),
-            medications_mentioned=data.get("medications_mentioned", []),
-            follow_up_needed=bool(data.get("follow_up_needed", False)),
-        )
-    except Exception as e:
-        return ReportSummaryResult(
-            key_findings=[],
-            summary=f"AI error: {str(e)[:200]}. Check GROQ_API_KEY.",
-            medications_mentioned=[],
-            follow_up_needed=False,
-        )
