@@ -15,27 +15,24 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(400, "Email already registered")
     user = User(
-        id=str(uuid.uuid4()),
-        name=body.name,
-        email=body.email,
+        id=str(uuid.uuid4()), name=body.name,
+        email=body.email.lower().strip(),
         phone=body.phone,
         password_hash=hash_password(body.password),
         role=body.role.value,
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    db.add(user); db.commit(); db.refresh(user)
     token = create_access_token({"sub": user.id, "role": user.role})
     return TokenResponse(access_token=token, user=UserOut.model_validate(user))
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == body.email).first()
+    user = db.query(User).filter(User.email == body.email.lower().strip()).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, "Invalid credentials")
     token = create_access_token({"sub": user.id, "role": user.role})
     return TokenResponse(access_token=token, user=UserOut.model_validate(user))
 
 @router.get("/me", response_model=UserOut)
-def me(current_user: User = Depends(get_current_user)):
-    return current_user
+def me(cu: User = Depends(get_current_user)):
+    return cu
