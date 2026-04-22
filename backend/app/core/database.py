@@ -1,4 +1,3 @@
-# backend/app/core/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -17,5 +16,5 @@ def get_db():
         db.close()
 
 def create_tables():
-    from app.models import user, physical  # noqa
+    from app.models import user, physical, health, notification, communication, mental  # noqa
     Base.metadata.create_all(bind=engine)
