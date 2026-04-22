@@ -71,26 +71,6 @@ async def openrouter_image(
         return data["choices"][0]["message"]["content"] or ""
 
 
-<<<<<<< HEAD
-
-# ── Food Image Analysis ───────────────────────────────────────────────────────
-async def analyze_food_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
-    prompt = """Analyze this food image. Identify food items and estimate nutrition.
-
-Respond ONLY with valid JSON:
-{
-  "food_name": "dish name",
-  "ingredients": ["item1", "item2"],
-  "calories": 350,
-  "protein_g": 20,
-  "carbs_g": 45,
-  "fat_g": 10,
-  "fiber_g": 5,
-  "serving_size": "1 plate (300g)",
-  "meal_type_suggestion": "lunch",
-  "health_notes": "brief note for elderly person"
-}"""
-=======
 # ── Medication Verification ───────────────────────────────────────────────────
 async def verify_medication(
     image_bytes: bytes, prescribed: str, mime_type: str = "image/jpeg"
@@ -109,36 +89,10 @@ Respond ONLY with valid JSON:
   "detected": "describe what you see",
   "warnings": []
 }}"""
->>>>>>> 8ee966e (few things are updated)
     raw = await openrouter_image(image_bytes, prompt, mime_type)
     data = extract_json(raw)
     if data:
         return {
-<<<<<<< HEAD
-            "food_name": str(data.get("food_name", "Unknown")),
-            "ingredients": list(data.get("ingredients", [])),
-            "calories": int(data.get("calories", 0)),
-            "protein": float(data.get("protein_g", 0)),
-            "carbs": float(data.get("carbs_g", 0)),
-            "fat": float(data.get("fat_g", 0)),
-            "fiber": float(data.get("fiber_g", 0)),
-            "serving_size": str(data.get("serving_size", "1 serving")),
-            "meal_type_suggestion": str(data.get("meal_type_suggestion", "meal")),
-            "health_notes": str(data.get("health_notes", "")),
-            "raw_response": raw,
-        }
-    return {
-        "food_name": "Food detected",
-        "ingredients": [],
-        "calories": 0,
-        "protein": 0,
-        "carbs": 0,
-        "fat": 0,
-        "fiber": 0,
-        "serving_size": "1 serving",
-        "meal_type_suggestion": "meal",
-        "health_notes": raw[:200],
-=======
             "matched": bool(data.get("matched", False)),
             "confidence": float(data.get("confidence", 0.5)),
             "detected_medication": str(data.get("detected", "")),
@@ -191,7 +145,6 @@ Respond ONLY with valid JSON:
         "confidence": 0.5,
         "related_findings": [],
         "disclaimer": "Always consult a qualified doctor.",
->>>>>>> 8ee966e (few things are updated)
         "raw_response": raw,
     }
 
