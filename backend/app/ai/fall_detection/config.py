@@ -1,13 +1,28 @@
-####Provide the actual path of the componants
+from pydantic_settings import BaseSettings
+from functools import lru_cache
 
 
-VIDEO_PATH = r"Sample_Input.mp4"
-XGB_MODEL_PATH = r"Video Model\xgb_final_model.json"
+class Settings(BaseSettings):
+    DATABASE_URL: str = "sqlite:///./careai.db"
+    SECRET_KEY: str = ""
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
+    GROQ_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
+    UPLOAD_DIR: str = "./uploads"
 
-AST_MODEL_PATH    = r"Audio Models and configurations\ast_model.torchscript.pt"
-AST_PREP_CONFIG   = r"Audio Models and configurations\preprocessor_config.json"
-AST_LABEL_MAP     = r"Audio Models and configurations\label_map.json"
+    class Config:
+        env_file = ".env"
+        extra = "ignore"
 
 
-PER_FRAME_PATH = r"Feature Extraction and Engineering\per-frame-best.py"
-FE_ENG_PATH    = r"Feature Extraction and Engineering\final-feature-eng-best.py"
+@lru_cache()
+def get_settings():
+    return Settings()
+
+
+settings = get_settings()

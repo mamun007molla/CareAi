@@ -1,5 +1,4 @@
-# backend/app/routers/physical.py
-import json, uuid
+import json, uuid, os
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -12,7 +11,6 @@ from app.schemas import (
     RoutineCreate, RoutineOut,
     MedicationVerifyResult, MedicationVerifyLogOut,
 )
-
 router = APIRouter(prefix="/physical", tags=["Module 1 — Physical Monitoring"])
 
 
@@ -170,49 +168,32 @@ def get_verify_history(db: Session = Depends(get_db), current_user: User = Depen
     )
 
 
-# ── Feature 1 Extended: Activity Image Analysis (medgemma_api.py) ─────────────
+
+# ── Activity Image Analysis (Ollama medgemma) ─────────────────────────────────
 @router.post("/analyze-image", response_model=dict)
 async def analyze_activity_image(
     image: UploadFile = File(...),
-    question: str = Form("Analyze this image and describe the person's posture and activity level."),
-    current_user: User = Depends(get_current_user),
+    question: str = Form("Analyze the person's posture and activity level. Is there any abnormality?"),
+    cu: User = Depends(get_current_user),
 ):
-    """
-    Analyze a posture/activity image using medgemma model.
-    Mirrors medgemma_api.py /Medical_Image_Understanding endpoint.
-    """
-    from app.ai.activity_analysis import analyze_activity_image as ai_analyze
+    from app.ai.groq_vision import analyze_activity_image as ai_analyze
     from app.utils.file_upload import read_upload_bytes
-
     img_bytes, mime_type = await read_upload_bytes(image)
-    result = await ai_analyze(img_bytes, question, mime_type)
-    return {
-        "analysis": result,
-        "model": "medgemma-1.5-4b (Ollama)",
-        "question": question,
-    }
+    result = await ai_analyze(img_bytes, question)
+    return {"analysis": result, "question": question, "model": "Groq llama-4-maverick"}
 
 
-# ── Feature 1 Core: Multimodal Fall Detection ─────────────────────────────────
+# ── Fall Detection (XGBoost + AST) ───────────────────────────────────────────
 @router.post("/detect-fall", response_model=dict)
 async def detect_fall(
     video: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    cu: User = Depends(get_current_user),
 ):
-    """
-    Upload a video and detect falls using multimodal AI:
-    - Vision: MediaPipe Pose + XGBoost (temporal)
-    - Audio: AST (Audio Spectrogram Transformer)
-    - Ensemble: Soft voting combination
-    Returns annotated video URL + fall detection result.
-    """
     from app.ai.fall_detection.detector import run_fall_detection
     from app.core.config import settings
-
     content = await video.read()
-    if len(content) > 100 * 1024 * 1024:  # 100MB limit for video
+    if len(content) > 100 * 1024 * 1024:
         raise HTTPException(413, "Video too large (max 100MB)")
-
     try:
         result = await run_fall_detection(content, settings.UPLOAD_DIR)
         return result
