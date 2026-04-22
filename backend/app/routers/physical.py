@@ -108,44 +108,36 @@ def delete_routine(routine_id: str, db: Session = Depends(get_db), current_user:
     db.commit()
 
 
-# ── Feature 2: Medication Image Verification (AI) ────────────────────────────
+# ── Medication Verification (Ollama medgemma) ─────────────────────────────────
 @router.post("/verify-medication", response_model=MedicationVerifyResult)
 async def verify_medication(
     image: UploadFile = File(...),
     prescribed_medication: str = Form(...),
     save_log: bool = Form(True),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    cu: User = Depends(get_current_user),
 ):
-    """Upload a medicine image and verify it matches the prescription using AI."""
     from app.ai.medication_verify import verify_medication_image
-    from app.utils.file_upload import read_upload_bytes, save_upload
+    from app.utils.file_upload import read_upload_bytes
+    import aiofiles
 
     img_bytes, mime_type = await read_upload_bytes(image)
     result = await verify_medication_image(img_bytes, prescribed_medication, mime_type)
 
-    # Save verification log
     if save_log:
-        # Save image
-        image.file.seek(0) if hasattr(image.file, 'seek') else None
-        file_url = None
         try:
-            from io import BytesIO
-            from fastapi import UploadFile as UF
-            import aiofiles, os
             upload_dir = "./uploads/medications"
             os.makedirs(upload_dir, exist_ok=True)
-            import uuid as _uuid
-            fname = f"{_uuid.uuid4().hex}.jpg"
+            fname = f"{uuid.uuid4().hex}.jpg"
             async with aiofiles.open(f"{upload_dir}/{fname}", "wb") as f:
                 await f.write(img_bytes)
             file_url = f"/uploads/medications/{fname}"
         except Exception:
-            pass
+            file_url = None
 
         log = MedicationVerifyLog(
             id=str(uuid.uuid4()),
-            user_id=current_user.id,
+            user_id=cu.id,
             prescribed_medication=prescribed_medication,
             detected_medication=result.detected_medication,
             matched=result.matched,
@@ -154,14 +146,16 @@ async def verify_medication(
         )
         db.add(log)
         db.commit()
-
     return result
 
+
 @router.get("/verify-medication/history", response_model=list[MedicationVerifyLogOut])
-def get_verify_history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_verify_history(
+    db: Session = Depends(get_db), cu: User = Depends(get_current_user)
+):
     return (
         db.query(MedicationVerifyLog)
-        .filter(MedicationVerifyLog.user_id == current_user.id)
+        .filter(MedicationVerifyLog.user_id == cu.id)
         .order_by(MedicationVerifyLog.verified_at.desc())
         .limit(20)
         .all()
