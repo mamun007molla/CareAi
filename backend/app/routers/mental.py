@@ -1,4 +1,4 @@
-
+# backend/app/routers/mental.py
 import uuid, json
 from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
@@ -64,6 +64,11 @@ def weekly_mood_summary(db: Session = Depends(get_db), cu: User = Depends(get_cu
         "trend": "positive" if avg >= 0.6 else "concerning" if avg < 0.4 else "neutral",
         "entries": [{"mood":e.mood,"score":e.score,"logged_at":e.logged_at.isoformat()} for e in entries],
     }
+
+
+
+
+
 
 
 
