@@ -6,22 +6,39 @@ from app.schemas import ReportSummaryResult
 
 
 def clean_json(text: str) -> str:
+<<<<<<< HEAD
     text = re.sub(r'```(?:json)?\s*', '', text)
     text = re.sub(r'```', '', text)
+=======
+    text = re.sub(r"```(?:json)?\s*", "", text)
+    text = re.sub(r"```", "", text)
+>>>>>>> 8ee966e (few things are updated)
     return text.strip()
 
 
 async def _groq_chat(system: str, user_msg: str, max_tokens: int = 800) -> str:
     """Base Groq call."""
     if not settings.GROQ_API_KEY:
+<<<<<<< HEAD
         raise ValueError("GROQ_API_KEY not set. Get free key at https://console.groq.com")
     from groq import AsyncGroq
+=======
+        raise ValueError(
+            "GROQ_API_KEY not set. Get free key at https://console.groq.com"
+        )
+    from groq import AsyncGroq
+
+>>>>>>> 8ee966e (few things are updated)
     client = AsyncGroq(api_key=settings.GROQ_API_KEY)
     response = await client.chat.completions.create(
         model="meta-llama/llama-4-scout-17b-16e-instruct",
         messages=[
             {"role": "system", "content": system},
+<<<<<<< HEAD
             {"role": "user",   "content": user_msg},
+=======
+            {"role": "user", "content": user_msg},
+>>>>>>> 8ee966e (few things are updated)
         ],
         max_tokens=max_tokens,
         temperature=0.1,
@@ -29,6 +46,7 @@ async def _groq_chat(system: str, user_msg: str, max_tokens: int = 800) -> str:
     return response.choices[0].message.content or ""
 
 
+<<<<<<< HEAD
 # ── Mood / Sentiment Analysis ─────────────────────────────────────────────────
 async def analyze_mood(text: str, mood_label: str = "general") -> dict:
     """Analyze mood text using Groq. Returns sentiment, emotions, summary."""
@@ -101,3 +119,8 @@ Report:
             medications_mentioned=[],
             follow_up_needed=False,
         )
+=======
+
+
+
+>>>>>>> 8ee966e (few things are updated)
