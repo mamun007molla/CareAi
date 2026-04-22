@@ -1,5 +1,4 @@
-# backend/app/routers/physical.py
-import json, uuid
+import json, uuid, os
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -12,7 +11,6 @@ from app.schemas import (
     RoutineCreate, RoutineOut,
     MedicationVerifyResult, MedicationVerifyLogOut,
 )
-
 router = APIRouter(prefix="/physical", tags=["Module 1 — Physical Monitoring"])
 
 

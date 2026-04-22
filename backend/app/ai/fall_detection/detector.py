@@ -159,13 +159,17 @@ async def run_fall_detection(video_bytes: bytes, upload_dir: str = "./uploads") 
         }
 
     except Exception as e:
+        import traceback
+
+        tb = traceback.format_exc()
+        print(f"[Fall Detection ERROR]\n{tb}")
         for p in [input_path, output_path]:
             if os.path.exists(p):
                 try:
                     os.remove(p)
                 except:
                     pass
-        raise RuntimeError(f"Fall detection failed: {str(e)}")
+        raise RuntimeError(f"Fall detection failed: {str(e)}\n{tb}")
 
 
 def _run_vision_only(input_path: str, output_path: str) -> str:
