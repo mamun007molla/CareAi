@@ -1,14 +1,15 @@
-# backend/app/schemas/__init__.py
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
-class UserRole(str, Enum):
-    ELDERLY   = "ELDERLY"
-    CAREGIVER = "CAREGIVER"
 
-# ── Auth ──────────────────────────────────────────────────────────────
+class UserRole(str, Enum):
+    ELDERLY = "ELDERLY"
+    CAREGIVER = "CAREGIVER"
+    DOCTOR = "DOCTOR"
+
+
 class RegisterRequest(BaseModel):
     name: str
     email: EmailStr
@@ -16,9 +17,11 @@ class RegisterRequest(BaseModel):
     password: str
     role: UserRole = UserRole.ELDERLY
 
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserOut(BaseModel):
     id: str
@@ -27,62 +30,19 @@ class UserOut(BaseModel):
     phone: Optional[str]
     role: UserRole
     created_at: datetime
+
     class Config:
         from_attributes = True
+
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
 
-# ── Activity Log ──────────────────────────────────────────────────────
-class ActivityLogCreate(BaseModel):
-    type: str
-    duration: Optional[int] = None
-    notes: Optional[str] = None
-    logged_at: Optional[datetime] = None
 
-class ActivityLogOut(BaseModel):
-    id: str
-    user_id: str
-    logged_by: Optional[str]
-    type: str
-    duration: Optional[int]
-    notes: Optional[str]
-    logged_at: datetime
-    class Config:
-        from_attributes = True
 
-# ── Routine ───────────────────────────────────────────────────────────
-class RoutineCreate(BaseModel):
-    title: str
-    type: str
-    scheduled_at: str
-    days: List[str]
-    is_active: bool = True
 
-class RoutineOut(BaseModel):
-    id: str
-    user_id: str
-    title: str
-    type: str
-    scheduled_at: str
-    days: List[str]
-    is_active: bool
-    created_at: datetime
-
-    @field_validator("days", mode="before")
-    @classmethod
-    def parse_days(cls, v):
-        import json
-        if isinstance(v, str):
-            return json.loads(v)
-        return v
-
-    class Config:
-        from_attributes = True
-
-# ── Medication Verify ─────────────────────────────────────────────────
 class MedicationVerifyResult(BaseModel):
     matched: bool
     confidence: float
@@ -90,6 +50,7 @@ class MedicationVerifyResult(BaseModel):
     prescribed_medication: Optional[str] = None
     warnings: List[str] = []
     raw_response: Optional[str] = None
+
 
 class MedicationVerifyLogOut(BaseModel):
     id: str
@@ -100,5 +61,54 @@ class MedicationVerifyLogOut(BaseModel):
     confidence: Optional[str]
     image_url: Optional[str]
     verified_at: datetime
+
     class Config:
         from_attributes = True
+
+
+
+
+
+
+class HealthRecordCreate(BaseModel):
+    visit_date: datetime
+    doctor_name: Optional[str] = None
+    diagnosis: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class HealthRecordOut(BaseModel):
+    id: str
+    user_id: str
+    visit_date: datetime
+    doctor_name: Optional[str]
+    diagnosis: Optional[str]
+    notes: Optional[str]
+    attachments: Optional[List[str]]
+    created_at: datetime
+
+    @field_validator("attachments", mode="before")
+    @classmethod
+    def parse_attachments(cls, v):
+        import json
+
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except:
+                return []
+        return v or []
+
+    class Config:
+        from_attributes = True
+
+
+
+
+
+
+
+
+
+
+

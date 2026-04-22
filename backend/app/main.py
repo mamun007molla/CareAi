@@ -1,18 +1,25 @@
-# backend/app/main.py
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import create_tables
-from app.routers import auth, physical, health
+from app.routers import (
+    auth,
+    physical,
+    health,
+    mental,
+    notifications,
+    links,
+    caregiver,
+    communication,
+)
 
 app = FastAPI(
-    title="CareAI — Elderly Monitoring System API",
-    version="1.0.0",
-    description="Module 1: Physical Monitoring | Module 2: Health Management",
+    title="CareAI — Elderly Monitoring System",
+    version="3.0.0",
+    description="M1: Physical | M2: Health | M3: Mental Health & Doctor Support",
     docs_url="/docs",
-    redoc_url="/redoc",
 )
 
 app.add_middleware(
@@ -37,21 +44,22 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(physical.router, prefix="/api/v1")
 app.include_router(health.router, prefix="/api/v1")
+app.include_router(mental.router, prefix="/api/v1")
+app.include_router(notifications.router, prefix="/api/v1")
+app.include_router(links.router, prefix="/api/v1")
+app.include_router(caregiver.router, prefix="/api/v1")
+app.include_router(communication.router, prefix="/api/v1")
 
 
 @app.on_event("startup")
 async def startup():
     create_tables()
-    print("✅ CareAI API started — Module 1 + Module 2")
+    print("✅ CareAI v3.0 — All 16 features active")
 
 
 @app.get("/")
 def root():
-    return {
-        "message": "CareAI API",
-        "docs": "/docs",
-        "modules": ["Physical Monitoring", "Health Management"],
-    }
+    return {"message": "CareAI v3.0", "features": 16, "modules": 3}
 
 
 @app.get("/health-check")

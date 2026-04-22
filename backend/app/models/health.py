@@ -1,3 +1,4 @@
+# backend/app/models/health.py
 import uuid
 from datetime import datetime
 from sqlalchemy import (
@@ -17,6 +18,10 @@ def gen_uuid():
     return str(uuid.uuid4())
 
 
+
+
+
+# ── Feature 2: Health History & Medical Documents ────────────────────────────
 class HealthRecord(Base):
     __tablename__ = "health_records"
     id = Column(String, primary_key=True, default=gen_uuid)
@@ -27,3 +32,8 @@ class HealthRecord(Base):
     notes = Column(Text, nullable=True)
     attachments = Column(Text, nullable=True)  # JSON: list of file paths
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+
+
+
